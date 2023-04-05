@@ -1,8 +1,42 @@
 from time import sleep
+from threading import Thread
 
 from parsetools import *
 from ffttools import *
 from plottools import *
+
+def getexpr() :
+	global s
+	global running
+
+	while running :
+		s = input("Expression du signal ('q' pour quitter) : ").strip()
+
+		if s == 'q' :
+			running = 0
+
+
+def plot() :
+	global s
+	global running
+
+	while running :
+
+		try :
+			f = stringToFunc(s)
+
+			xf, yf = ft(context, f)
+
+			replaceData(data, xf, yf)
+			adaptWindow(data)
+
+			fig.canvas.draw()
+			fig.canvas.flush_events()
+
+		except Exception as e :
+			print(e)
+
+		sleep(0.05)
 
 fig, data = prepareInteractivePlot()
 
@@ -10,20 +44,15 @@ setWindow([0,20000], [0,1])
 
 context = fftsetup()
 
-for i in range(150) :
+s = ""
 
-	try :
-		f = stringToFunc(input("Expression du signal : "))
+gexpr = Thread(target=getexpr)
+thplot = Thread(target=plot)
 
-		xf, yf = ft(context, f)
+running = 1
 
-		replaceData(data, xf, yf)
-		adaptWindow(data)
+gexpr.start()
+thplot.start()
 
-		fig.canvas.draw()
-		fig.canvas.flush_events()
-
-		sleep(0.05)
-
-	except Exception as e :
-		print(e)
+gexpr.join()
+thplot.join()
